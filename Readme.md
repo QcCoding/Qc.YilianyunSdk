@@ -3,14 +3,16 @@
 `Qc.YilianyunSdk` 基于 `netstandard2` 构建  
 `Qc.YilianyunSdk.Sample` 包含基础授权及打印调用示例，授权及打印接口测试，其他接口不常用只是对文档接口做了对应封装,使用前请测试好接口再使用
 
-
 ## 使用
 
 ### 一.安装程序包
 
 [![Nuget](https://img.shields.io/nuget/v/Qc.YilianyunSdk)](https://www.nuget.org/packages/Qc.YilianyunSdk/)
 
-`Install-Package Install-Package Qc.YilianyunSdk`
+- dotnet cli  
+  `dotnet add package Qc.YilianyunSdk`
+- 包管理器  
+  `Install-Package Install-Package Qc.YilianyunSdk`
 
 ### 二.添加配置
 
