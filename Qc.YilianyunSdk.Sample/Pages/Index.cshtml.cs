@@ -118,7 +118,7 @@ namespace Qc.YilianyunSdk.Sample.Pages
         public IActionResult OnPostAuthTerminal()
         {
             var result = _yilianyunService.AuthTerminal(MachineCode, Msign, Phone, PrinterName);
-            Message = result.IsSuccess() ? "极速授权成功" : ("错误信息：" + result.Error_Description);
+            Message = result.IsSuccess() ? "终端授权成功" : ("错误信息：" + result.Error_Description);
             AccessToken = null;
             RefreshToken = null;
             if (result.IsSuccess())
