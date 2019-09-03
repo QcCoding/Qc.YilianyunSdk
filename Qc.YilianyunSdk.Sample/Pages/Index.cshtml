@@ -1,0 +1,58 @@
+﻿@page
+@model IndexModel
+@{
+    ViewData["Title"] = "易联云SDK-使用示例";
+}
+<div style="color:red;">@(Model.Message)</div>
+<form method="post">
+    <div>
+        <h2>填写设备号</h2>
+        <label>设备号：<input asp-for="MachineCode" value="@(Model.MachineCode)" required /></label>
+        <button asp-page-handler="HistoryAccessToken">获取AccessToken</button>
+    </div>
+    <div>
+        <h2>终端授权 仅支持自有应用</h2>
+        <label>终端密钥：<input asp-for="Msign" value="@(Model.Msign)" /></label>
+        <label>打印机名称：<input asp-for="PrinterName" value="@(Model.PrinterName)" /></label>
+        <label>手机号：<input asp-for="Phone" value="@(Model.Phone)" /></label>
+        <button asp-page-handler="AuthTerminal">永久授权</button>
+    </div>
+    <div>
+        <h2>开放应用授权验证</h2>
+        <button asp-page-handler="AuthRedirect">点击获取授权</button>
+    </div>
+    <div>
+        <h2>开放应用极速授权 仅支持开放应用 k4、w1、k6机型支持</h2>
+        <label>二维码特殊密钥：<input asp-for="QrKey" value="@(Model.QrKey)" /></label>
+        <button asp-page-handler="AuthFast">快速授权</button>
+    </div>
+    <div>
+        <h2>授权信息</h2>
+        <label>AccessToken<input asp-for="AccessToken" value="@(Model.AccessToken)" /></label>
+        <label>RefreshToken<input asp-for="RefreshToken" value="@(Model.RefreshToken)" /></label>
+    </div>
+    <div>
+        <h2>AccessToken更新</h2>
+        <label>RefreshToken<input asp-for="RefreshToken" value="@(Model.RefreshToken)" /></label>
+        <button asp-page-handler="RefreshToken">更新Token</button>
+    </div>
+    <div>
+        <h2>获取终端状态</h2>
+        <button asp-page-handler="PrinterStatus">获取终端状态</button>
+        <label>@(Model.PrinterStatus)</label>
+    </div>
+    <div>
+        <h2>文本打印</h2>
+        <div>
+            <label>打印内容<sub>指令文档：http://doc2.10ss.net/332006 </sub></label>
+        </div>
+        <div><textarea asp-for="PrintContent" value="@(Model.PrintContent)" rows="5" cols="50"></textarea></div>
+        <div>
+            <button asp-page-handler="PrintText">打印文本</button>
+        </div>
+    </div>
+    <div>
+        <h2>其余接口</h2>
+        <div>可根据自己的需要进行测试后使用</div>
+    </div>
+</form>
