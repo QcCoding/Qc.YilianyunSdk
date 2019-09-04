@@ -87,9 +87,9 @@ public IActionResult OnPostPrintText()
 | ------------- |:-------------:| -----:|
 | ClientId      | string |  应用ID |
 | ClientSecret     | string      |   应用密钥 |
-| YilianyunClientType | 枚举值(开放应用=0,自有应用=1)    |    应用类型 |
+| YilianyunClientType | int(开放应用=0,自有应用=1)    |    应用类型 |
 | SaveTokenDirPath     | string      |    token保存目录 默认 ./AppData |
-| ApiUrl     | string      |    接口地址 默认 https://open-api.10ss.net录 |
+| ApiUrl     | string      |    接口地址 默认 https://open-api.10ss.net |
 | Timeout     | int      |    接口超时时间 30s |
 
 ## 示例说明
