@@ -44,6 +44,7 @@ public IndexModel(YilianyunService yilianyunService)
     _yilianyunService = yilianyunService;
 }
 
+public string Message { get; set; }
 /// <summary>
 /// 终端授权
 /// </summary>
@@ -51,42 +52,45 @@ public IndexModel(YilianyunService yilianyunService)
 public IActionResult OnPostAuthTerminal()
 {
     var result = _yilianyunService.AuthTerminal(MachineCode, Msign, Phone, PrinterName);
-    var message = result.IsSuccess() ? "终端授权成功" : ("错误信息：" + result.Error_Description);
-    return Ok(message);
+    Message = result.IsSuccess() ? "终端授权成功" : ("错误信息：" + result.Error_Description);
+    return Page();
 }
-```
 
-### YilianyunConfig 配置
-
-```cs
-public class YilianyunConfig
+/// <summary>
+/// 打印机状态
+/// </summary>
+/// <returns></returns>
+public IActionResult OnPostPrinterStatus()
 {
-    /// <summary>
-    /// 应用ID
-    /// </summary>
-    public string ClientId { get; set; }
-    /// <summary>
-    /// 应用密钥
-    /// </summary>
-    public string ClientSecret { get; set; }
-    /// <summary>
-    /// 应用类型
-    /// </summary>
-    public YilianyunClientType YilianyunClientType { get; set; }
-    /// <summary>
-    /// token保存目录 默认 ./AppData
-    /// </summary>
-    public string SaveTokenDirPath { get; set; } = "./AppData";
-    /// <summary>
-    /// 接口地址 默认 https://open-api.10ss.net
-    /// </summary>
-    public string ApiUrl { get; set; } = "https://open-api.10ss.net";
-    /// <summary>
-    /// 接口超时时间 默认 30s
-    /// </summary>
-    public int? Timeout { get; set; } = 30;
+    var result = _yilianyunService.PrinterGetStatus(AccessToken, MachineCode);
+    if (result.IsSuccess())
+    {
+        PrinterStatus = result.Body.State.ToString();
+    }
+    Message = result.IsSuccess() ? "获取终端状态成功" : ("错误信息：" + result.Error_Description);
+    return Page();
+}
+/// <summary>
+/// 打印文本
+/// </summary>
+/// <returns></returns>
+public IActionResult OnPostPrintText()
+{
+    var result = _yilianyunService.PrintText(AccessToken, MachineCode, PrintContent);
+    Message = result.IsSuccess() ? "打印文本成功" : ("错误信息：" + result.Error_Description);
+    return Page();
 }
 ```
+
+### YilianyunConfig 配置项
+| 字段名        | 类型           | 描述  |
+| ------------- |:-------------:| -----:|
+| ClientId      | string |  应用ID |
+| ClientSecret     | string      |   应用密钥 |
+| YilianyunClientType | int(开放应用=0,自有应用=1)    |    应用类型 |
+| SaveTokenDirPath     | string      |    token保存目录 默认 ./AppData |
+| ApiUrl     | string      |    接口地址 默认 https://open-api.10ss.net |
+| Timeout     | int      |    接口超时时间 30s |
 
 ## 示例说明
 
