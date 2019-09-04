@@ -4,7 +4,7 @@
     <TargetFramework>netstandard2.0</TargetFramework>
     <Authors>yimo</Authors>
     <Product>YilianyunSdk</Product>
-    <Description>易联云 Sdk, 基于 netstandard2.0</Description>
+    <Description>一个基于 netstandard2.0 构建的易联云 Sdk</Description>
     <Company>QcCoding</Company>
     <PackageProjectUrl>https://github.com/QcCoding/Qc.YilianyunSdk</PackageProjectUrl>
     <RepositoryUrl>https://github.com/QcCoding/Qc.YilianyunSdk</RepositoryUrl>
@@ -12,6 +12,9 @@
     <PackageLicenseUrl>https://github.com/QcCoding/Qc.YilianyunSdk/blob/master/LICENSE</PackageLicenseUrl>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <AssemblyVersion>1.0.3.0</AssemblyVersion>
+    <FileVersion>1.0.3.0</FileVersion>
+    <Version>1.0.3</Version>
   </PropertyGroup>
 
   <ItemGroup>

@@ -14,12 +14,12 @@ namespace Qc.YilianyunSdk
         /// <param name="services"></param>
         /// <param name="optionsAction"></param>
         /// <returns></returns>
-        public static IServiceCollection AddYilianyunSdk<T>(this IServiceCollection services, Action<YilianyunConfig> optionsAction = null) where T : IYilianyunSdkHook
+        public static IServiceCollection AddYilianyunSdk<T>(this IServiceCollection services, Action<YilianyunConfig> optionsAction = null) where T : class, IYilianyunSdkHook
         {
             if (optionsAction != null)
                 services.Configure(optionsAction);
             services.AddHttpClient();
-            services.AddScoped<IYilianyunSdkHook, DefaultYilianyunSdkHook>();
+            services.AddScoped<IYilianyunSdkHook, T>();
             services.AddScoped<YilianyunService, YilianyunService>();
             return services;
         }
