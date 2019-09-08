@@ -1,6 +1,6 @@
 # 易联云打印机 SDK
 
-`Qc.YilianyunSdk` 基于 `netstandard2` 构建  
+`Qc.YilianyunSdk` 基于 `.NET Standard 2.0 ` 构建  
 `Qc.YilianyunSdk.Sample` 包含基础授权及打印调用示例，授权及打印接口测试，其他接口不常用只是对文档接口做了对应封装,使用前请测试好接口再使用
 
 ## 使用
@@ -94,6 +94,6 @@ public IActionResult OnPostPrintText()
 
 ## 示例说明
 
-`Qc.YilianyunSdk.Sample` 为示例项目，运行后，获得社保号，新建易联云应用后再`Startup.cs`配置后即可测试
+`Qc.YilianyunSdk.Sample` 为示例项目，运行后，获得设备号，新建易联云应用后再`Startup.cs`配置后即可测试
 
 易联云文档地址: http://doc2.10ss.net/
