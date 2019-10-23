@@ -18,6 +18,7 @@
 
 > 如需实现自定义存储 AccessToken，动态获取应用配置，可自行实现接口 `IYilianyunSdkHook`  
 > 默认提供 `DefaultYilianyunSdkHook`，存储 AccessToken 等信息到指定目录
+> 需要注意**自有应用**和**开放应用**的区别，它们的保存不一样，自有应用应根据 client_id(应用ID) 保存 accessToken 信息，开放应用应根据 machine_code(打印机终端号) 保存 accessToken 信息
 
 ```cs
 using Qc.YilianyunSdk
@@ -45,8 +46,19 @@ public IndexModel(YilianyunService yilianyunService)
 }
 
 public string Message { get; set; }
+
 /// <summary>
-/// 终端授权
+/// 极速授权-开放应用
+/// </summary>
+/// <returns></returns>
+public IActionResult OnPostAuthFast()
+{
+    var result = _yilianyunService.AuthFast(MachineCode, QrKey);
+    Message = result.IsSuccess() ? "极速授权成功" : ("错误信息：" + result.Error_Description);
+    return Page();
+}
+/// <summary>
+/// 终端授权-自由应用
 /// </summary>
 /// <returns></returns>
 public IActionResult OnPostAuthTerminal()

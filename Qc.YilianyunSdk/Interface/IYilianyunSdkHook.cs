@@ -12,7 +12,7 @@ namespace Qc.YilianyunSdk
         /// <returns></returns>
         YilianyunConfig GetClientConfig();
         /// <summary>
-        /// 获取指定打印机的 AccessToken
+        /// 获取打印机的 AccessToken
         /// </summary>
         /// <returns></returns>
         AccessTokenOutputModel GetAccessToken(string machine_code);

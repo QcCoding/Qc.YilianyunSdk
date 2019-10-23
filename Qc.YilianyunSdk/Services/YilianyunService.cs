@@ -67,11 +67,18 @@ namespace Qc.YilianyunSdk
         /// <returns></returns>
         public YilianyunBaseOutputModel<AccessTokenOutputModel> GetAccessToken(string code, bool skipSave = false)
         {
-            if (string.IsNullOrEmpty(code))
-                return new YilianyunBaseOutputModel<AccessTokenOutputModel>("code  不能为空");
             Dictionary<string, object> dicData = GetInitPostData();
-            dicData.Add("grant_type", "authorization_code");
-            dicData.Add("code", code);
+            if (_yilianyunConfig.YilianyunClientType == YilianyunClientType.开放应用)
+            {
+                if (string.IsNullOrEmpty(code))
+                    return new YilianyunBaseOutputModel<AccessTokenOutputModel>("开放应用 code 不能为空");
+                dicData.Add("grant_type", "authorization_code");
+                dicData.Add("code", code);
+            }
+            else if (_yilianyunConfig.YilianyunClientType == YilianyunClientType.自有应用)
+            {
+                dicData.Add("grant_type", "client_credentials");
+            }
             var responseResult = _httpClient.HttpPost<YilianyunBaseOutputModel<AccessTokenOutputModel>>("/oauth/oauth", dicData);
             if (responseResult.IsError())
             {
@@ -114,35 +121,36 @@ namespace Qc.YilianyunSdk
             return _yilianyunSdkHook.SaveToken(responseResult.Body);
         }
         /// <summary>
-        /// 终端授权 (永久授权) 仅支持自有应用  
+        /// 终端授权 (永久授权) 仅支持自有应用,将自动调用 GetAccessToken 授权
         /// </summary>
         /// <param name="machine_code">易联云打印机终端号</param>
         /// <param name="msign">易联云终端密钥</param>
-        /// <param name="access_token">授权的token 为null将查询hook中的AccessToken</param>
         /// <param name="phone">手机卡号码(可填)</param>
         /// <param name="print_name">自定义打印机名称(可填)</param>
-        /// <param name="skipSave">跳过保存</param>
         /// <returns></returns>
-        public YilianyunBaseOutputModel<AccessTokenOutputModel> AuthTerminal(string machine_code, string msign, string phone = null, string print_name = null, bool skipSave = false)
+        public YilianyunBaseOutputModel<AccessTokenOutputModel> AuthTerminal(string machine_code, string msign, string phone = null, string print_name = null)
         {
-            Dictionary<string, object> accessData = GetInitPostData();
-            accessData.Add("grant_type", "client_credentials");
-            var accessResult = _httpClient.HttpPost<YilianyunBaseOutputModel<AccessTokenOutputModel>>("/oauth/oauth", accessData);
-            if (accessResult.IsError())
-                return accessResult;
-            accessResult.Body.Machine_Code = machine_code;
-            accessResult.Body.PrinterName = print_name;
-            if (accessResult.Body.Expires_In.HasValue)
-                accessResult.Body.ExpiressEndTime = DateTime.Now.AddSeconds(accessResult.Body.Expires_In.Value);
+            var accessModel = _yilianyunSdkHook.GetAccessToken(machine_code);
+            if (accessModel == null || string.IsNullOrEmpty(accessModel.Access_Token))
+            {
+                var accessTokenResult = GetAccessToken(null, true);
+                if (accessTokenResult.IsError())
+                    return accessTokenResult;
+                accessTokenResult.Body.PrinterName = print_name;
+                accessTokenResult.Body.Phone = phone;
+                accessTokenResult.Body.Machine_Code = machine_code;
+                var saveTokenResult = _yilianyunSdkHook.SaveToken(accessTokenResult.Body);
+                if (saveTokenResult.IsError())
+                    return saveTokenResult;
+                accessModel = accessTokenResult.Body;
+            }
             Dictionary<string, object> dicData = GetInitPostData();
-            var access_token = accessResult.Body.Access_Token;
-
             //终端号
             dicData.Add("machine_code", machine_code);
             //终端密钥
             dicData.Add("msign", msign);
             //授权token
-            dicData.Add("access_token", access_token);
+            dicData.Add("access_token", accessModel.Access_Token);
             //手机卡号
             if (!string.IsNullOrEmpty(phone))
                 dicData.Add("phone", phone);
@@ -150,11 +158,12 @@ namespace Qc.YilianyunSdk
             if (!string.IsNullOrEmpty(print_name))
                 dicData.Add("print_name", print_name);
 
-            var responseResult = _httpClient.HttpPost<YilianyunBaseOutputModel>("/printer/addprinter", dicData);
-            if (skipSave)
-                return new YilianyunBaseOutputModel<AccessTokenOutputModel>(responseResult.Error_Description, responseResult.Error) { Body = accessResult.Body };
-            var saveTokenResult = _yilianyunSdkHook.SaveToken(accessResult.Body);
-            return saveTokenResult;
+            var responseResult = _httpClient.HttpPost<YilianyunBaseOutputModel<AccessTokenOutputModel>>("/printer/addprinter", dicData);
+            if (responseResult.IsSuccess())
+            {
+                responseResult.Body = accessModel;
+            }
+            return responseResult;
         }
         /// <summary>
         /// 极速授权 仅支持开放应用 k4、w1、k6机型支持
