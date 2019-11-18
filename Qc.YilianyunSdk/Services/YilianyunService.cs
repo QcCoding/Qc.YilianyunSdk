@@ -11,7 +11,7 @@ namespace Qc.YilianyunSdk
     {
         private readonly HttpClient _httpClient;
         private readonly IYilianyunSdkHook _yilianyunSdkHook;
-        private readonly YilianyunConfig _yilianyunConfig;
+        private YilianyunConfig _yilianyunConfig;
         public YilianyunService(IHttpClientFactory _httpClientFactory
             , IOptions<YilianyunConfig> configOptions
             , IYilianyunSdkHook yilianyunSdkHook)
@@ -127,8 +127,9 @@ namespace Qc.YilianyunSdk
         /// <param name="msign">易联云终端密钥</param>
         /// <param name="phone">手机卡号码(可填)</param>
         /// <param name="print_name">自定义打印机名称(可填)</param>
+        /// <param name="skipSave">跳过保存(可填)</param>
         /// <returns></returns>
-        public YilianyunBaseOutputModel<AccessTokenOutputModel> AuthTerminal(string machine_code, string msign, string phone = null, string print_name = null)
+        public YilianyunBaseOutputModel<AccessTokenOutputModel> AuthTerminal(string machine_code, string msign, string phone = null, string print_name = null, bool skipSave = true)
         {
             var accessModel = _yilianyunSdkHook.GetAccessToken(machine_code);
             if (accessModel == null || string.IsNullOrEmpty(accessModel.Access_Token))
@@ -139,9 +140,12 @@ namespace Qc.YilianyunSdk
                 accessTokenResult.Body.PrinterName = print_name;
                 accessTokenResult.Body.Phone = phone;
                 accessTokenResult.Body.Machine_Code = machine_code;
-                var saveTokenResult = _yilianyunSdkHook.SaveToken(accessTokenResult.Body);
-                if (saveTokenResult.IsError())
-                    return saveTokenResult;
+                if (!skipSave)
+                {
+                    var saveTokenResult = _yilianyunSdkHook.SaveToken(accessTokenResult.Body);
+                    if (saveTokenResult.IsError())
+                        return saveTokenResult;
+                }
                 accessModel = accessTokenResult.Body;
             }
             Dictionary<string, object> dicData = GetInitPostData();
