@@ -615,17 +615,17 @@ namespace Qc.YilianyunSdk
         /// <param name="page_index">查询条件—当前页码,暂只提供前3页数据</param>
         /// <param name="page_size">查询条件—每页显示条数,每页最大条数100</param>
         /// <returns></returns>
-        public YilianyunBaseOutputModel<PrinterOrderListOutputModel> PrinterOrderGetPageingList(string access_token, string machine_code, int page_index, int page_size)
+        public YilianyunBaseOutputModel<List<PrinterOrderListOutputModel>> PrinterOrderGetPageingList(string access_token, string machine_code, int page_index, int page_size)
         {
             access_token = access_token ?? _yilianyunSdkHook.GetAccessToken(machine_code)?.Access_Token;
             if (string.IsNullOrEmpty(access_token))
-                return new YilianyunBaseOutputModel<PrinterOrderListOutputModel>("打印机未授权");
+                return new YilianyunBaseOutputModel<List<PrinterOrderListOutputModel>>("打印机未授权");
             Dictionary<string, object> dicData = GetInitPostData();
             dicData.Add("access_token", access_token);
             dicData.Add("machine_code", machine_code);
             dicData.Add("page_index", page_index);
             dicData.Add("page_size", page_size);
-            var responseResult = _httpClient.HttpPost<YilianyunBaseOutputModel<PrinterOrderListOutputModel>>("/printer/getorderpaginglist", dicData);
+            var responseResult = _httpClient.HttpPost<YilianyunBaseOutputModel<List<PrinterOrderListOutputModel>>>("/printer/getorderpaginglist", dicData);
             return responseResult;
         }
         #endregion

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Qc.YilianyunSdk.Utils;
 
 namespace Qc.YilianyunSdk.Sample.Pages
 {
@@ -177,6 +178,16 @@ namespace Qc.YilianyunSdk.Sample.Pages
         {
             var result = _yilianyunService.PrintText(AccessToken, MachineCode, PrintContent);
             Message = result.IsSuccess() ? "打印文本成功" : ("错误信息：" + result.Error_Description);
+            return Page();
+        }
+        /// <summary>
+        /// 打印历史
+        /// </summary>
+        /// <returns></returns>
+        public IActionResult OnPostPrintHistory()
+        {
+            var result = _yilianyunService.PrinterOrderGetPageingList(AccessToken, MachineCode, 1, 10);
+            Message = result.IsSuccess() ? "获取打印历史成功" + JsonHelper.Serialize(result.Body) : ("获取结果：" + result.Error_Description);
             return Page();
         }
     }

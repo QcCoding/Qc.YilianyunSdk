@@ -58,7 +58,7 @@ public IActionResult OnPostAuthFast()
     return Page();
 }
 /// <summary>
-/// 终端授权-自由应用
+/// 终端授权-自有应用 注意：获取的AccessToken无失效时间，若为自有应用，获取一次就可以了，其实就是把应用的AccessToken和打印机绑定了
 /// </summary>
 /// <returns></returns>
 public IActionResult OnPostAuthTerminal()
