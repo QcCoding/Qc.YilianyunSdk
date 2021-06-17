@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace Qc.YilianyunSdk
 {
@@ -34,7 +35,7 @@ namespace Qc.YilianyunSdk
         /// <returns></returns>
         private Dictionary<string, object> GetInitPostData()
         {
-            var timestamp = DateTime.Now.GetDateTimeStamp();
+            var timestamp = DateTimeOffset.Now.ToUnixTimeSeconds();
             Dictionary<string, object> dicData = new Dictionary<string, object>
             {
                 { "client_id", _yilianyunConfig.ClientId },
@@ -169,6 +170,57 @@ namespace Qc.YilianyunSdk
             }
             return responseResult;
         }
+
+        /// <summary>
+        /// 终端授权 (永久授权) 仅支持自有应用,将自动调用 GetAccessToken 授权
+        /// </summary>
+        /// <param name="machine_code">易联云打印机终端号</param>
+        /// <param name="msign">易联云终端密钥</param>
+        /// <param name="phone">手机卡号码(可填)</param>
+        /// <param name="print_name">自定义打印机名称(可填)</param>
+        /// <param name="skipSave">跳过保存(可填)</param>
+        /// <returns></returns>
+        public async Task<YilianyunBaseOutputModel<AccessTokenOutputModel>> AuthTerminalAsync(string machine_code, string msign, string phone = null, string print_name = null, bool skipSave = true)
+        {
+            var accessModel = _yilianyunSdkHook.GetAccessToken(machine_code);
+            if (accessModel == null || string.IsNullOrEmpty(accessModel.Access_Token))
+            {
+                var accessTokenResult = GetAccessToken(null, true);
+                if (accessTokenResult.IsError())
+                    return accessTokenResult;
+                accessTokenResult.Body.PrinterName = print_name;
+                accessTokenResult.Body.Phone = phone;
+                accessTokenResult.Body.Machine_Code = machine_code;
+                if (!skipSave)
+                {
+                    var saveTokenResult = _yilianyunSdkHook.SaveToken(accessTokenResult.Body);
+                    if (saveTokenResult.IsError())
+                        return saveTokenResult;
+                }
+                accessModel = accessTokenResult.Body;
+            }
+            Dictionary<string, object> dicData = GetInitPostData();
+            //终端号
+            dicData.Add("machine_code", machine_code);
+            //终端密钥
+            dicData.Add("msign", msign);
+            //授权token
+            dicData.Add("access_token", accessModel.Access_Token);
+            //手机卡号
+            if (!string.IsNullOrEmpty(phone))
+                dicData.Add("phone", phone);
+            //打印机名称
+            if (!string.IsNullOrEmpty(print_name))
+                dicData.Add("print_name", print_name);
+
+            var responseResult = await _httpClient.HttpPostAsync<YilianyunBaseOutputModel<AccessTokenOutputModel>>("/printer/addprinter", dicData);
+            if (responseResult.IsSuccess())
+            {
+                responseResult.Body = accessModel;
+            }
+            return responseResult;
+        }
+
         /// <summary>
         /// 极速授权 仅支持开放应用 k4、w1、k6机型支持
         /// </summary>
@@ -221,6 +273,26 @@ namespace Qc.YilianyunSdk
             var responseResult = _httpClient.HttpPost<YilianyunBaseOutputModel>("/printer/deleteprinter", dicData);
             return responseResult;
         }
+
+        /// <summary>
+        /// 删除终端授权
+        /// </summary>
+        /// <param name="access_token">授权的token 为null将查询hook中的AccessToken</param>
+        /// <param name="machine_code">易联云打印机终端号</param>
+        /// <returns></returns>
+        public async Task<YilianyunBaseOutputModel> PrinterDeleteprinterAsync(string machine_code, string access_token = null)
+        {
+            access_token ??= _yilianyunSdkHook.GetAccessToken(machine_code)?.Access_Token;
+            if (string.IsNullOrEmpty(access_token))
+                return new YilianyunBaseOutputModel("打印机未授权");
+            Dictionary<string, object> dicData = GetInitPostData();
+            //终端号
+            dicData.Add("machine_code", machine_code);
+            //授权token
+            dicData.Add("access_token", access_token);
+            var responseResult = await _httpClient.HttpPostAsync<YilianyunBaseOutputModel>("/printer/deleteprinter", dicData);
+            return responseResult;
+        }
         #endregion
 
         #region 打印接口
@@ -250,6 +322,33 @@ namespace Qc.YilianyunSdk
             var responseResult = _httpClient.HttpPost<YilianyunBaseOutputModel>("/print/index", dicData);
             return responseResult;
         }
+
+        /// <summary>
+        /// 打印文本
+        /// </summary>
+        /// <param name="access_token">授权的token 为null将查询hook中的AccessToken</param>
+        /// <param name="machine_code">易联云打印机终端号</param>
+        /// <param name="content">打印内容,无需进行URL编码</param>
+        /// <param name="origin_id">商户系统内部订单号，要求32个字符内，只能是数字、大小写字母 ，且在同一个client_id下唯一</param>
+        /// <returns></returns>
+        public async Task<YilianyunBaseOutputModel> PrintTextAsync(string machine_code, string content, string origin_id = null, string access_token = null)
+        {
+            access_token ??= _yilianyunSdkHook.GetAccessToken(machine_code)?.Access_Token;
+            if (string.IsNullOrEmpty(access_token))
+                return new YilianyunBaseOutputModel("打印机未授权");
+            if (string.IsNullOrEmpty(machine_code)
+                || string.IsNullOrEmpty(content))
+                return new YilianyunBaseOutputModel("打印内容不能为空");
+
+            Dictionary<string, object> dicData = GetInitPostData();
+            dicData.Add("access_token", access_token);
+            dicData.Add("machine_code", machine_code);
+            dicData.Add("content", System.Web.HttpUtility.UrlEncode(content));
+            dicData.Add("origin_id", origin_id ?? Guid.NewGuid().ToString("N"));
+            var responseResult = await _httpClient.HttpPostAsync<YilianyunBaseOutputModel>("/print/index", dicData);
+            return responseResult;
+        }
+
         /// <summary>
         /// 打印图形 不支持机型: k4-wh, k4-wa, m1
         /// </summary>
@@ -549,6 +648,24 @@ namespace Qc.YilianyunSdk
             return responseResult;
         }
 
+        /// <summary>
+        /// 获取终端状态接口
+        /// </summary>
+        /// <param name="access_token">授权的token 为null将查询hook中的AccessToken</param>
+        /// <param name="machine_code">易联云打印机终端号</param>
+        /// <returns></returns>
+        public async Task<YilianyunBaseOutputModel<PrinterStatusOutputModel>> PrinterGetStatusAsync(string machine_code, string access_token = null)
+        {
+            access_token ??= _yilianyunSdkHook.GetAccessToken(machine_code)?.Access_Token;
+            if (string.IsNullOrEmpty(access_token))
+                return new YilianyunBaseOutputModel<PrinterStatusOutputModel>("打印机未授权");
+            Dictionary<string, object> dicData = GetInitPostData();
+            dicData.Add("access_token", access_token);
+            dicData.Add("machine_code", machine_code);
+            var responseResult = await _httpClient.HttpPostAsync<YilianyunBaseOutputModel<PrinterStatusOutputModel>>("/printer/getprintstatus", dicData);
+            return responseResult;
+        }
+
         #endregion
 
         #region 订单接口
@@ -593,7 +710,7 @@ namespace Qc.YilianyunSdk
         /// </summary>
         /// <param name="access_token">授权的token 为null将查询hook中的AccessToken</param>
         /// <param name="machine_code">易联云打印机终端号</param>
-        /// <param name="isOpen">是否开启接单拒单</param>
+        /// <param name="order_id">是否开启接单拒单</param>
         /// <returns></returns>
         public YilianyunBaseOutputModel<PrinterOrderStatusOutputModel> PrinterOrderGetStatus(string access_token, string machine_code, string order_id)
         {

@@ -12,6 +12,7 @@ namespace Qc.YilianyunSdk
         /// 自定义错误 error=-1,success:0
         /// </summary>
         /// <param name="customErrorDesc"></param>
+        /// <param name="errorCode"></param>
         public YilianyunBaseOutputModel(string customErrorDesc, string errorCode = "-1")
         {
             Error = errorCode;

@@ -7,6 +7,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Qc.YilianyunSdk", "Qc.Yilia
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Qc.YilianyunSdk.Sample", "Qc.YilianyunSdk.Sample\Qc.YilianyunSdk.Sample.csproj", "{71608FD4-A27C-459D-B696-039A9DBA22DE}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Qc.YilianyunSdk.SqlServer", "Qc.YilianyunSdk.SqlServer\Qc.YilianyunSdk.SqlServer.csproj", "{63AB0272-19AB-4C16-A148-3420B7F68984}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{71608FD4-A27C-459D-B696-039A9DBA22DE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{71608FD4-A27C-459D-B696-039A9DBA22DE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{71608FD4-A27C-459D-B696-039A9DBA22DE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{63AB0272-19AB-4C16-A148-3420B7F68984}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{63AB0272-19AB-4C16-A148-3420B7F68984}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{63AB0272-19AB-4C16-A148-3420B7F68984}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{63AB0272-19AB-4C16-A148-3420B7F68984}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

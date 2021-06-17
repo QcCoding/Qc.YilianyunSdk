@@ -20,7 +20,7 @@ namespace Qc.YilianyunSdk
                 services.Configure(optionsAction);
             services.AddHttpClient();
             services.AddScoped<IYilianyunSdkHook, T>();
-            services.AddScoped<YilianyunService, YilianyunService>();
+            services.AddScoped(typeof(YilianyunService));
             return services;
         }
         /// <summary>

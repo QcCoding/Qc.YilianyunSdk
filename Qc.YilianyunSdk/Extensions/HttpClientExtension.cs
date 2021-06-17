@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace Qc.YilianyunSdk
 {
@@ -32,6 +33,33 @@ namespace Qc.YilianyunSdk
                 postDataStr += $"{item.Key}={item.Value}";
             }
             return client.HttpPost<T>(url, postDataStr);
+        }
+
+        public static async Task<T> HttpPostAsync<T>(this HttpClient client, string url, string postData = null, string contentType = "application/x-www-form-urlencoded")
+        {
+            postData = postData ?? string.Empty;
+            var httpContent = new StringContent(postData, Encoding.UTF8);
+            if (contentType != null)
+                httpContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(contentType);
+
+            HttpResponseMessage response = await client.PostAsync(url, httpContent);
+            string result = await response.Content.ReadAsStringAsync();
+            return Utils.JsonHelper.Deserialize<T>(result);
+        }
+
+        public static async Task<T> HttpPostAsync<T>(this HttpClient client, string url, Dictionary<string, object> dicData)
+        {
+            string postDataStr = string.Empty;
+            int i = 0;
+            foreach (var item in dicData)
+            {
+                if (i++ > 0)
+                {
+                    postDataStr += "&";
+                }
+                postDataStr += $"{item.Key}={item.Value}";
+            }
+            return await client.HttpPostAsync<T>(url, postDataStr);
         }
     }
 }
