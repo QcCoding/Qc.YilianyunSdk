@@ -516,18 +516,24 @@ namespace Qc.YilianyunSdk
         /// <param name="url">推送地址填写必须以http://或https://开头的地址。推送地址需要支持GET访问，当GET请求访问时，请直接返回{"data":"OK"}，用于推送地址的可用性测试</param>
         /// <param name="isOpen">是否开启接单拒单</param>
         /// <returns></returns>
-        public YilianyunBaseOutputModel PrinterSetPushurl(string access_token, string machine_code, string cmd, string url, bool isOpen)
+        public YilianyunBaseOutputModel PrinterSetPushurl(string access_token, string machine_code, string cmd,string url, bool isOpen)
         {
             access_token = access_token ?? _yilianyunSdkHook.GetAccessToken(machine_code)?.Access_Token;
             if (string.IsNullOrEmpty(access_token))
                 return new YilianyunBaseOutputModel("打印机未授权");
             Dictionary<string, object> dicData = GetInitPostData();
             dicData.Add("access_token", access_token);
-            dicData.Add("machine_code", machine_code);
+
+            //易联云打印机终端号(开放型必传，自有型可忽略)
+            if (!string.IsNullOrEmpty(machine_code))
+            {
+                dicData.Add("machine_code", machine_code);
+            }
+
             dicData.Add("cmd", cmd);
             dicData.Add("url", url);
             dicData.Add("status", isOpen ? "open" : "close");
-            var responseResult = _httpClient.HttpPost<YilianyunBaseOutputModel>("/printer/setpushurl", dicData);
+            var responseResult = _httpClient.HttpPost<YilianyunBaseOutputModel>("/oauth/setpushurl", dicData);
             return responseResult;
         }
 
