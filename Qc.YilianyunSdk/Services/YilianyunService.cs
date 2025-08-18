@@ -25,7 +25,7 @@ namespace Qc.YilianyunSdk
             if (_yilianyunConfig == null)
                 throw new Exception("打印机配置错误");
             _httpClient = _httpClientFactory.CreateClient("yilianyun");
-            _httpClient.BaseAddress = new Uri(_yilianyunConfig.ApiUrl ?? "https://open-api.10ss.net");
+            _httpClient.BaseAddress = new Uri(_yilianyunConfig.ApiUrl ?? "https://open-api.10ss.net/v2");
             _httpClient.Timeout = TimeSpan.FromSeconds(_yilianyunConfig.Timeout ?? 30);
         }
         /// <summary>
@@ -170,21 +170,31 @@ namespace Qc.YilianyunSdk
             return responseResult;
         }
         /// <summary>
-        /// 极速授权 仅支持开放应用 k4、w1、k6机型支持
+        /// 极速授权 仅支持开放应用
         /// </summary>
         /// <param name="machine_code">易联云打印机终端号</param>
         /// <param name="qr_key">特殊密钥(有效期为300秒)</param>
+        /// <param name="msign">终端密钥（可选，qr_key 与 msign 二选一）</param>
         /// <param name="printerName">自定义打印机名称</param>
         /// <param name="skipSave">跳过保存</param>
         /// <returns></returns>
-        public YilianyunBaseOutputModel<AccessTokenOutputModel> AuthFast(string machine_code, string qr_key, string printerName = null, bool skipSave = false)
+        public YilianyunBaseOutputModel<AccessTokenOutputModel> AuthFast(string machine_code, string qr_key = null, string msign = null, string printerName = null, bool skipSave = false)
         {
+            // machine_code 必填，qr_key 与 msign 二选一
             if (string.IsNullOrEmpty(machine_code)
-                || string.IsNullOrEmpty(qr_key))
+                || (string.IsNullOrEmpty(qr_key) && string.IsNullOrEmpty(msign)))
                 return new YilianyunBaseOutputModel<AccessTokenOutputModel>("密钥不正确");
+
             Dictionary<string, object> dicData = GetInitPostData();
             dicData.Add("machine_code", machine_code);
-            dicData.Add("qr_key", qr_key);
+            if (!string.IsNullOrEmpty(qr_key))
+            {
+                dicData.Add("qr_key", qr_key);
+            }
+            if (!string.IsNullOrEmpty(msign))
+            {
+                dicData.Add("msign", msign);
+            }
 
             var responseResult = _httpClient.HttpPost<YilianyunBaseOutputModel<AccessTokenOutputModel>>("/oauth/scancodemodel", dicData);
             if (responseResult.IsError())
@@ -273,7 +283,7 @@ namespace Qc.YilianyunSdk
         }
 
         /// <summary>
-        /// 打印面单 不支持机型: k4-wh, k4-wa, m1 (k4系列机型不建议使用不干胶热敏纸)
+        /// 打印面单 支持机型k5
         /// </summary>
         /// <param name="access_token">授权的token 为null将查询hook中的AccessToken</param>
         /// <param name="machine_code">易联云打印机终端号</param>
@@ -291,6 +301,26 @@ namespace Qc.YilianyunSdk
             dicData.Add("origin_id", origin_id);
             dicData.Add("content", contentJson);
             var responseResult = _httpClient.HttpPost<YilianyunBaseOutputModel>("/expressprint/index", dicData);
+            return responseResult;
+        }
+
+        /// <summary>
+        /// 面单取消接口
+        /// </summary>
+        /// <param name="access_token">授权的token 为null将查询hook中的AccessToken</param>
+        /// <param name="machine_code">易联云打印机终端号</param>
+        /// <param name="contentJson">json字符串，详细说明：https://www.kancloud.cn/ly6886/oauth-api/3170326</param>
+        /// <returns></returns>
+        public YilianyunBaseOutputModel ExpressCancel(string access_token, string machine_code, string contentJson)
+        {
+            access_token = access_token ?? _yilianyunSdkHook.GetAccessToken(machine_code)?.Access_Token;
+            if (string.IsNullOrEmpty(access_token))
+                return new YilianyunBaseOutputModel("打印机未授权");
+            Dictionary<string, object> dicData = GetInitPostData();
+            dicData.Add("access_token", access_token);
+            dicData.Add("machine_code", machine_code);
+            dicData.Add("content", contentJson);
+            var responseResult = _httpClient.HttpPost<YilianyunBaseOutputModel>("/expressprint/cancel", dicData);
             return responseResult;
         }
 
@@ -516,7 +546,7 @@ namespace Qc.YilianyunSdk
         /// <param name="url">推送地址填写必须以http://或https://开头的地址。推送地址需要支持GET访问，当GET请求访问时，请直接返回{"data":"OK"}，用于推送地址的可用性测试</param>
         /// <param name="isOpen">是否开启接单拒单</param>
         /// <returns></returns>
-        public YilianyunBaseOutputModel PrinterSetPushurl(string access_token, string machine_code, string cmd,string url, bool isOpen)
+        public YilianyunBaseOutputModel PrinterSetPushurl(string access_token, string machine_code, string cmd, string url, bool isOpen)
         {
             access_token = access_token ?? _yilianyunSdkHook.GetAccessToken(machine_code)?.Access_Token;
             if (string.IsNullOrEmpty(access_token))
@@ -634,6 +664,116 @@ namespace Qc.YilianyunSdk
             var responseResult = _httpClient.HttpPost<YilianyunBaseOutputModel<List<PrinterOrderListOutputModel>>>("/printer/getorderpaginglist", dicData);
             return responseResult;
         }
+
+        /// <summary>
+        /// 订单重打接口
+        /// 文档：https://www.kancloud.cn/ly6886/oauth-api/3170332
+        /// </summary>
+        /// <param name="access_token">授权的token，为 null 将查询 hook 中的 AccessToken</param>
+        /// <param name="machine_code">易联云打印机终端号</param>
+        /// <param name="order_id">易联云侧，打印id</param>
+        /// <returns></returns>
+        public YilianyunBaseOutputModel PrinterOrderReprint(string access_token, string machine_code, string order_id)
+        {
+            access_token = access_token ?? _yilianyunSdkHook.GetAccessToken(machine_code)?.Access_Token;
+            if (string.IsNullOrEmpty(access_token))
+                return new YilianyunBaseOutputModel("打印机未授权");
+            Dictionary<string, object> dicData = GetInitPostData();
+            dicData.Add("access_token", access_token);
+            dicData.Add("machine_code", machine_code);
+            dicData.Add("order_id", order_id);
+            var responseResult = _httpClient.HttpPost<YilianyunBaseOutputModel>("/printer/reprintorder", dicData);
+            return responseResult;
+        }
+
+        /// <summary>
+        /// K8推送开关设置
+        /// 文档：https://www.kancloud.cn/ly6886/oauth-api/3208323
+        /// </summary>
+        /// <param name="access_token">授权的token，为 null 将查询 hook 中的 AccessToken</param>
+        /// <param name="machine_code">易联云打印机终端号</param>
+        /// <param name="isOpen">是否开启接单拒单</param>
+        /// <param name="mode">扫码数据推送模式 1=标准模式（全推送给开发者，不支持易联云出餐、核销、收银服务）；2=支付模式（付款、退款、带YLY标识内容推送给开发者，支持易联云出餐、核销服务）；3=标识模式（仅带YLY标识内容推送给开发者，支持易联云出餐、核销、收银服务）；默认标准模式</param>
+        /// <returns></returns>
+        public YilianyunBaseOutputModel PrinterPushSwitch(string access_token, string machine_code, bool isOpen, int? mode = null)
+        {
+            access_token = access_token ?? _yilianyunSdkHook.GetAccessToken(machine_code)?.Access_Token;
+            if (string.IsNullOrEmpty(access_token))
+                return new YilianyunBaseOutputModel("打印机未授权");
+            Dictionary<string, object> dicData = GetInitPostData();
+            dicData.Add("access_token", access_token);
+            dicData.Add("machine_code", machine_code);
+            dicData.Add("status", isOpen ? "open" : "close");
+            if (mode.HasValue && (mode.Value == 1 || mode.Value == 2 || mode.Value == 3))
+            {
+                dicData.Add("mode", mode.Value);
+            }
+            var responseResult = _httpClient.HttpPost<YilianyunBaseOutputModel>("/printer/pushswitch", dicData);
+            return responseResult;
+        }
+
+        /// <summary>
+        /// K8关键词设置
+        /// 文档：https://www.kancloud.cn/ly6886/oauth-api/3198288
+        /// </summary>
+        /// <param name="access_token">授权的token，为 null 将查询 hook 中的 AccessToken</param>
+        /// <param name="machine_code">易联云打印机终端号</param>
+        /// <param name="keys">order_payment=需支付关键词；order_non_payment=指定关闭支付关键词；order_id=重打关键词；order_refund=退款关键词；all=所有关键词；</param>
+        /// <param name="type">white_list=白名单；two_white_list=二级白名单；black_list=黑名单；two_black_list=二级黑名单；all=所有黑白名单</param>
+        /// <param name="contentJson">关键词数据，一个数组中最大能设置5个关键词，单个关键词长度不能超过10个中文字符或者20个英文字符</param>
+        /// <returns></returns>
+        public YilianyunBaseOutputModel PrinterSetKeywords(string access_token, string machine_code, string keys, string type, string contentJson)
+        {
+            access_token = access_token ?? _yilianyunSdkHook.GetAccessToken(machine_code)?.Access_Token;
+            if (string.IsNullOrEmpty(access_token))
+                return new YilianyunBaseOutputModel("打印机未授权");
+            Dictionary<string, object> dicData = GetInitPostData();
+            dicData.Add("access_token", access_token);
+            dicData.Add("machine_code", machine_code);
+            dicData.Add("keys", keys);
+            dicData.Add("type", type);
+            dicData.Add("content", contentJson);
+            var responseResult = _httpClient.HttpPost<YilianyunBaseOutputModel>("/printer/setkeywords", dicData);
+            return responseResult;
+        }
+
+        /// <summary>
+        /// K8高级设置
+        /// 文档：https://www.kancloud.cn/ly6886/oauth-api/3208324
+        /// </summary>
+        /// <param name="access_token">授权的token，为 null 将查询 hook 中的 AccessToken</param>
+        /// <param name="machine_code">易联云打印机终端号</param>
+        /// <param name="usb_print_mode">USB打印设置 0=直接打印；1=扫码支付后打印</param>
+        /// <param name="usb_input_mode">USB输入方式设置 0=键盘输入；1=刷脸或扫码设备输入</param>
+        /// <param name="camera_decode_tx_mode">扫码输出设置 0=输出到服务器；1=输出到收银机</param>
+        /// <returns></returns>
+        public YilianyunBaseOutputModel PrinterSetting(string access_token, string machine_code, int? usb_print_mode = null, int? usb_input_mode = null, int? camera_decode_tx_mode = null)
+        {
+            access_token = access_token ?? _yilianyunSdkHook.GetAccessToken(machine_code)?.Access_Token;
+            if (string.IsNullOrEmpty(access_token))
+                return new YilianyunBaseOutputModel("打印机未授权");
+            Dictionary<string, object> dicData = GetInitPostData();
+            dicData.Add("access_token", access_token);
+            dicData.Add("machine_code", machine_code);
+            if (usb_print_mode.HasValue && (usb_print_mode.Value == 0 || usb_print_mode.Value == 1))
+            {
+                dicData.Add("usb_print_mode", usb_print_mode.Value);
+            }
+
+            if (usb_input_mode.HasValue && (usb_input_mode.Value == 0 || usb_input_mode.Value == 1))
+            {
+                dicData.Add("usb_input_mode", usb_input_mode.Value);
+            }
+
+            if (camera_decode_tx_mode.HasValue && (camera_decode_tx_mode.Value == 0 || camera_decode_tx_mode.Value == 1))
+            {
+                dicData.Add("camera_decode_tx_mode", camera_decode_tx_mode.Value);
+            }
+
+            var responseResult = _httpClient.HttpPost<YilianyunBaseOutputModel>("/printer/setting", dicData);
+            return responseResult;
+        }
+
         #endregion
     }
 }
